@@ -1,7 +1,2 @@
-*
-!.gitignore
-!Makefile
-!*/
-!includes/*
 .vscode
 
