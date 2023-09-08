@@ -117,7 +117,7 @@ int main() {
           get_increment_ranges(numIncrementsPerThread * numThreads);
 
       run(std::move(increments));
-      numThreads += 2;
     }
+    numThreads += 2;
   }
 }
