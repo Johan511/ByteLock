@@ -9,24 +9,28 @@
 
 #define MY_ASSERT(clause, log)                                                 \
   if (!(clause)) {                                                             \
-    log();                                                                     \
     std::cout << "Assertion failed: " << #clause << std::endl;                 \
     std::cout << "File: " << __FILE__ << std::endl;                            \
+    fflush(stdout);                                                            \
+    log();                                                                     \
     exit(1);                                                                   \
   }
 
-static constexpr std::size_t numThreads = 16;
-static constexpr std::size_t len = 10'000'000;
-static constexpr std::size_t numIncrementsPerThread = 1'000;
+static constexpr std::size_t numThreads = 12;
+static constexpr std::size_t len = 100'000;
+static constexpr std::size_t numIncrementsPerThread = 1'00;
 
 std::ofstream debugOut("debug.log", std::ios::out | std::ios::trunc);
+std::ofstream timeLog("time.csv", std::ios::out | std::ios::trunc);
 
 std::vector<std::pair<std::size_t, std::size_t>>
-get_increment_ranges(std::size_t size) {
+get_increment_ranges(std::size_t size, std::size_t range = 0) {
   std::vector<std::pair<std::size_t, std::size_t>> ranges;
   for (std::size_t i = 0; i != size; i++) {
-    std::size_t x = rand() % len;
-    std::size_t y = std::min(x + 10000, len);
+    std::size_t x, y;
+
+    x = rand() % len;
+    y = rand() % len;
 
     std::size_t begin = std::min(x, y);
     std::size_t end = std::max(x, y);
@@ -49,21 +53,17 @@ std::vector<std::size_t> get_final_vector(
   return v;
 }
 
-std::mutex mtx;
-
-int main() {
-
+void run(std::vector<std::pair<std::size_t, std::size_t>> &&increments) {
   // ByteLock<SpinLockGuard, SpinLock> bl;
   ByteLock bl;
 
   std::vector<std::thread> threads;
   std::vector<std::size_t> v(len);
 
-  std::vector<std::pair<std::size_t, std::size_t>> increments =
-      get_increment_ranges(numThreads * numIncrementsPerThread);
+  std::vector<int64_t> timeTaken(numThreads);
 
   for (std::size_t i = 0; i < numThreads; i++) {
-    threads.emplace_back(std::thread([&v, &bl, &increments, i]() {
+    threads.emplace_back(std::thread([&v, &bl, &increments, i, &timeTaken]() {
       std::chrono::time_point<std::chrono::system_clock> const start =
           std::chrono::system_clock::now();
       for (std::size_t _ = numIncrementsPerThread * i;
@@ -83,10 +83,11 @@ int main() {
       std::chrono::time_point<std::chrono::system_clock> const end =
           std::chrono::system_clock::now();
 
-      std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end -
-                                                                         start)
-                       .count()
-                << std::endl;
+      int64_t tt =
+          std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+              .count();
+
+      timeTaken[i] = tt;
     }));
   }
 
@@ -102,4 +103,16 @@ int main() {
       debugOut << v[i] << " " << final_vector[i] << '\n';
     }
   });
+
+  timeLog << std::accumulate(timeTaken.begin(), timeTaken.end(), 0) / numThreads
+          << '\n';
+}
+
+int main() {
+  std::vector<std::pair<std::size_t, std::size_t>> increments =
+      get_increment_ranges(numIncrementsPerThread * numThreads);
+
+  run(std::move(increments));
+
+  return 0;
 }
