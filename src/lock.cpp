@@ -1,4 +1,5 @@
 #include "../includes/lock.hpp"
+#include <algorithm>
 
 class SpinLock {
 public:
@@ -26,7 +27,7 @@ std::size_t ByteLock<Guard, Lock>::acquire_lock(std::size_t begin,
     std::size_t b = it.second.first;
     std::size_t e = it.second.second;
 
-    if ((b >= begin && b < end) || (e > begin && e <= end)) {
+    if (!(e < begin) && !(end < b) ) {
       return 0;
     }
   }

@@ -16,9 +16,10 @@
     exit(1);                                                                   \
   }
 
-static constexpr std::size_t numThreads = 12;
-static constexpr std::size_t len = 100'000;
-static constexpr std::size_t numIncrementsPerThread = 1'00;
+std::size_t numThreads = 2;
+static constexpr std::size_t numCores = 8;
+static constexpr std::size_t len = 1'000'000;
+static constexpr std::size_t numIncrementsPerThread = 1'000;
 
 std::ofstream debugOut("debug.log", std::ios::out | std::ios::trunc);
 std::ofstream timeLog("time.csv", std::ios::out | std::ios::trunc);
@@ -109,10 +110,14 @@ void run(std::vector<std::pair<std::size_t, std::size_t>> &&increments) {
 }
 
 int main() {
-  std::vector<std::pair<std::size_t, std::size_t>> increments =
-      get_increment_ranges(numIncrementsPerThread * numThreads);
+  while (numThreads <= numCores) {
+    for (int i = 0; i < 1000; i++) {
+      timeLog << numThreads << ',';
+      std::vector<std::pair<std::size_t, std::size_t>> increments =
+          get_increment_ranges(numIncrementsPerThread * numThreads);
 
-  run(std::move(increments));
-
-  return 0;
+      run(std::move(increments));
+      numThreads += 2;
+    }
+  }
 }
