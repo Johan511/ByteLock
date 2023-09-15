@@ -27,7 +27,7 @@ std::size_t ByteLock<Guard, Lock>::acquire_lock(std::size_t begin,
     std::size_t b = it.second.first;
     std::size_t e = it.second.second;
 
-    if (!(e < begin) && !(end < b) ) {
+    if (!(e < begin) && !(end < b)) {
       return 0;
     }
   }

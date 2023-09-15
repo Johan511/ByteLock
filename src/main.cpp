@@ -23,7 +23,7 @@ static constexpr std::size_t len = 1'000'000;
 static constexpr std::size_t numIncrementsPerThread = 1'000;
 
 std::ofstream debugOut("debug.log", std::ios::out | std::ios::trunc);
-std::ofstream timeLog("seq.csv", std::ios::out | std::ios::trunc);
+std::ofstream timeLog("time.csv", std::ios::out | std::ios::trunc);
 
 std::vector<std::pair<std::size_t, std::size_t>>
 get_increment_ranges(std::size_t size, std::size_t range = 0) {
@@ -55,8 +55,8 @@ std::vector<std::size_t> get_final_vector(
   return v;
 }
 
-void whole_lock(std::vector<std::pair<std::size_t, std::size_t>> &&increments){
-      // ByteLock<SpinLockGuard, SpinLock> bl;
+void whole_lock(std::vector<std::pair<std::size_t, std::size_t>> &&increments) {
+  // ByteLock<SpinLockGuard, SpinLock> bl;
   std::mutex mtx;
 
   std::vector<std::thread> threads;
@@ -71,8 +71,6 @@ void whole_lock(std::vector<std::pair<std::size_t, std::size_t>> &&increments){
       for (std::size_t _ = numIncrementsPerThread * i;
            _ < numIncrementsPerThread * (i + 1); _++) {
         std::pair<std::size_t, std::size_t> p = increments[_];
-
-        std::size_t lockId = 0;
 
         const std::lock_guard<std::mutex> lock(mtx);
         // std::cout << "Lock Acquired: " << lockId << std::endl;
@@ -91,7 +89,7 @@ void whole_lock(std::vector<std::pair<std::size_t, std::size_t>> &&increments){
       timeTaken[i] = tt;
     }));
   }
-    for (std::thread &t : threads)
+  for (std::thread &t : threads)
     t.join();
 
   auto const final_vector = get_final_vector(increments);
@@ -107,7 +105,6 @@ void whole_lock(std::vector<std::pair<std::size_t, std::size_t>> &&increments){
   timeLog << std::accumulate(timeTaken.begin(), timeTaken.end(), 0) / numThreads
           << '\n';
 }
-
 
 void run(std::vector<std::pair<std::size_t, std::size_t>> &&increments) {
   // ByteLock<SpinLockGuard, SpinLock> bl;
