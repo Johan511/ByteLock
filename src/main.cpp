@@ -170,7 +170,7 @@ int main() {
     std::vector<std::pair<std::size_t, std::size_t>> increments =
         get_increment_ranges(numIncrementsPerThread * numThreads);
 
-    whole_lock(std::move(increments));
+    run(std::move(increments));
   }
   numThreads += 2;
   // }
