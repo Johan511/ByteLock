@@ -17,10 +17,10 @@
     exit(1);                                                                   \
   }
 
-std::size_t numThreads = 20;
+std::size_t numThreads = 6;
 static constexpr std::size_t numCores = 40;
 static constexpr std::size_t len = 1'000'000;
-static constexpr std::size_t numIncrementsPerThread = 1'000;
+static constexpr std::size_t numIncrementsPerThread = 10'000;
 
 std::ofstream debugOut("debug.log", std::ios::out | std::ios::trunc);
 std::ofstream timeLog("time.csv", std::ios::out | std::ios::trunc);
@@ -32,7 +32,7 @@ get_increment_ranges(std::size_t size, std::size_t range = 0) {
     std::size_t x, y;
 
     x = rand() % len;
-    y = std::min(x + 10000, len);
+    y = std::min(x + 10, len);
 
     std::size_t begin = std::min(x, y);
     std::size_t end = std::max(x, y);
@@ -122,12 +122,7 @@ void run(std::vector<std::pair<std::size_t, std::size_t>> &&increments) {
       for (std::size_t _ = numIncrementsPerThread * i;
            _ < numIncrementsPerThread * (i + 1); _++) {
         std::pair<std::size_t, std::size_t> p = increments[_];
-        std::atomic_flag flag = ATOMIC_FLAG_INIT;
-        std::size_t lockId = 0;
-        while (lockId == 0) {
-          lockId = bl.acquire_lock(p.first, p.second, &flag);
-          flag.wait(ATOMIC_FLAG_INIT);
-        }
+        std::size_t lockId = bl.acquire_lock(p.first, p.second);
         // std::cout << "Lock Acquired: " << lockId << std::endl;
         for (std::size_t x = p.first; x < p.second; x++) {
           v[x]++;

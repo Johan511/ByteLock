@@ -13,23 +13,35 @@ class ByteLock {
   std::unordered_map<std::size_t, std::vector<std::atomic_flag *>> waiting;
 
 public:
-  std::size_t acquire_lock(std::size_t begin, std::size_t end,
-                           std::atomic_flag *flag) {
-    const Guard lock_guard(mtx);
+  std::size_t acquire_lock(std::size_t begin, std::size_t end) {
+    std::size_t lockId = 0;
+    std::atomic_flag flag(true);
+    int localFlag = 0;
+    while (lockId == 0) {
+      {
+        const Guard lock_guard(mtx);
+        for (auto const &it : rangeMap) {
+          std::size_t b = it.second.first;
+          std::size_t e = it.second.second;
 
-    for (auto const &it : rangeMap) {
-      std::size_t b = it.second.first;
-      std::size_t e = it.second.second;
-
-      if (!(e < begin) && !(end < b)) {
-        flag->clear();
-        waiting[it.first].push_back(flag);
-        return 0;
+          if (!(e < begin) && !(end < b)) {
+            flag.clear();
+            waiting[it.first].push_back(&flag);
+            localFlag = 1;
+            break;
+          }
+        }
+        if (localFlag == 0) {
+          rangeMap[++counter] = {begin, end};
+          lockId = counter;
+        }
+      }
+      if (localFlag != 0) {
+        flag.wait(0);
+        localFlag = 0;
       }
     }
-    flag->test_and_set();
-    rangeMap[++counter] = {begin, end};
-    return counter;
+    return lockId;
   }
 
   void release_lock(std::size_t lockId) {
