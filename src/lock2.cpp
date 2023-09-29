@@ -5,7 +5,7 @@ std::size_t ByteLock<Guard, Lock>::acquire_lock(std::size_t begin,
                                                 std::size_t end) {
   std::size_t lockId = 0;
   std::atomic_flag flag(true);
-  int localFlag = 0;
+  bool localFlag = 0;
   while (lockId == 0) {
     {
       const Guard lock_guard(mtx);
@@ -14,20 +14,19 @@ std::size_t ByteLock<Guard, Lock>::acquire_lock(std::size_t begin,
         std::size_t e = it.second.second;
 
         if (!(e < begin) && !(end < b)) {
-          flag.clear();
           waiting[it.first].push_back(&flag);
-          localFlag = 1;
+          localFlag = true;
           break;
         }
       }
-      if (localFlag == 0) {
+      if (localFlag == false) {
         rangeMap[++counter] = {begin, end};
         lockId = counter;
       }
     }
-    if (localFlag != 0) {
+    if (localFlag != false) {
       flag.wait(0);
-      localFlag = 0;
+      localFlag = false;
     }
   }
   return lockId;
