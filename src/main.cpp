@@ -108,7 +108,7 @@ void whole_lock(std::vector<std::pair<std::size_t, std::size_t>> &&increments) {
 
 void run(std::vector<std::pair<std::size_t, std::size_t>> &&increments) {
   // ByteLock<SpinLockGuard, SpinLock> bl;
-  ByteLock<std::lock_guard, std::mutex> bl;
+  ByteLock<std::mutex, std::lock_guard> bl;
 
   std::vector<std::thread> threads;
   std::vector<std::size_t> v(len);
@@ -122,13 +122,13 @@ void run(std::vector<std::pair<std::size_t, std::size_t>> &&increments) {
       for (std::size_t _ = numIncrementsPerThread * i;
            _ < numIncrementsPerThread * (i + 1); _++) {
         std::pair<std::size_t, std::size_t> p = increments[_];
-        std::size_t lockId = bl.acquire_lock(p.first, p.second);
+        std::size_t lockId = bl.lock(p.first, p.second);
         // std::cout << "Lock Acquired: " << lockId << std::endl;
         for (std::size_t x = p.first; x < p.second; x++) {
           v[x]++;
         }
         // std::cout << "Lock Released: " << lockId << std::endl;
-        bl.release_lock(lockId);
+        bl.unlock(lockId);
       }
       std::chrono::time_point<std::chrono::system_clock> const end =
           std::chrono::system_clock::now();

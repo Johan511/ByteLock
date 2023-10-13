@@ -1,8 +1,7 @@
 #include "../includes/lock2.hpp"
 
-template <template <class> class Guard, class Lock>
-std::size_t ByteLock<Guard, Lock>::acquire_lock(std::size_t begin,
-                                                std::size_t end) {
+template <class Lock, template <class> class Guard>
+std::size_t ByteLock<Lock, Guard>::lock(std::size_t begin, std::size_t end) {
   std::size_t lockId = 0;
   std::atomic_flag flag(true);
   bool localFlag = 0;
@@ -14,7 +13,7 @@ std::size_t ByteLock<Guard, Lock>::acquire_lock(std::size_t begin,
         std::size_t e = it.second.second;
 
         if (!(e < begin) && !(end < b)) {
-          waiting[it.first].push_back(&flag);
+          waiting[it.first].push_back(flag);
           localFlag = true;
           break;
         }
@@ -32,17 +31,33 @@ std::size_t ByteLock<Guard, Lock>::acquire_lock(std::size_t begin,
   return lockId;
 }
 
-template <template <class> class Guard, class Lock>
-void ByteLock<Guard, Lock>::release_lock(std::size_t lockId) {
+template <class Lock, template <class> class Guard>
+void ByteLock<Lock, Guard>::unlock(std::size_t lockId) {
   const Guard lock_guard(mtx);
 
   rangeMap.erase(lockId);
 
-  std::vector<std::atomic_flag *> waitingFlags = std::move(waiting[lockId]);
+  std::vector<std::reference_wrapper<std::atomic_flag>> waitingFlags =
+      std::move(waiting[lockId]);
   waiting.erase(lockId);
 
-  for (std::atomic_flag *f : waitingFlags) {
-    f->test_and_set();
-    f->notify_all();
+  for (std::atomic_flag &f : waitingFlags) {
+    f.test_and_set();
+    f.notify_all();
   }
+}
+
+template <class Lock, template <class> class Guard>
+std::size_t ByteLock<Lock, Guard>::try_lock(std::size_t begin, std::size_t end) {
+  const Guard lock_guard(mtx);
+  for (auto const &it : rangeMap) {
+    std::size_t b = it.second.first;
+    std::size_t e = it.second.second;
+
+    if (!(e < begin) && !(end < b)) {
+      return 0;
+    }
+  }
+  rangeMap[++counter] = {begin, end};
+  return counter;
 }
