@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <random>
 #include <vector>
 
@@ -22,22 +23,23 @@ std::mt19937_64 mtGen(std::random_device{}());
     x is generated randomly
     y is generated using f(x)
 */
-template <typename F>
-IncrementsTy get_increment_ranges(std::size_t const size,
-                                  std::size_t const len = 1'000'000,
-                                  F &&f = LE5000) {
+template <typename RangeEndGen = decltype(LE5000)>
+IncrementsTy
+get_increment_ranges(std::size_t const numRanges,
+                     std::size_t const len = 1'000'000,
+                     RangeEndGen &&f = std::forward<RangeEndGen>(LE5000)) {
 
   IncrementsTy ranges;
-  for (std::size_t i = 0; i != size; i++) {
+  for (std::size_t i = 0; i != numRanges; i++) {
     std::size_t x, y;
 
-    x = mtGen % len;
+    x = mtGen() % len;
     y = f(x, len);
 
     std::size_t begin = std::min(x, y);
     std::size_t end = std::max(x, y);
 
-    ranges.emplace_back({begin, end});
+    ranges.emplace_back(std::make_pair(begin, end));
   }
   return ranges;
 }
@@ -47,10 +49,10 @@ IncrementsTy get_increment_ranges(std::size_t const size,
         for each element in range
             modifier(element)
 */
-template <typename T, typename Modifier>
-std::vector<T> get_final_vector(std::vector<T> &&initialVector,
-                                IncrementsTy increments,
-                                Modifier &&modifier = IncrementBy1<T>) {
+template <typename T, typename Modifier = decltype(IncrementBy1<T>)>
+std::vector<T> get_final_vector(
+    std::vector<T> &&initialVector, IncrementsTy increments,
+    Modifier &&modifier = std::forward<Modifier>(IncrementBy1<T>)) {
 
   const auto ForEachUnaryFunc = [&modifier, &initialVector](auto const &p) {
     std::size_t begin = p.first;
