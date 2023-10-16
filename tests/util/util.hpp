@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <atomic>
 #include <random>
 #include <vector>
 
@@ -9,14 +10,48 @@ using IncrementsTy = std::vector<std::pair<std::size_t, std::size_t>>;
 //////////////////////////////////////////////////////////////////////
 
 // DEFAULT PARAMS ////////////////////////////////////////////////////
-static const auto LE5000 = [](std::size_t x, std::size_t max) {
+const auto LE5000 = [](std::size_t x, std::size_t max) {
   return std::min(x + 5000, max);
 };
 
-template <typename T> static const auto IncrementBy1 = [](T &x) { x++; };
+template <typename T> const auto IncrementBy1 = [](T &x) { x++; };
 //////////////////////////////////////////////////////////////////////
 
 std::mt19937_64 mtGen(std::random_device{}());
+
+/*
+  1) Derived from std::thread, Mthread is final
+  2) maintains start and end time of thread
+  3) join is removed by making it private
+  4) derived_join to be used in place of join, returns execution time
+*/
+class MThread final : public std::thread {
+
+  // make sure join is not callable, only derived_join is
+  using std::thread::join;
+
+public:
+  using chrono_granularity = std::chrono::steady_clock;
+  using chrono_duration = std::chrono::duration<double>;
+
+  chrono_granularity::time_point begin;
+  chrono_granularity::time_point end;
+
+  template <typename F, typename... Args>
+  MThread(F &&f, Args &&...args)
+      : begin(chrono_granularity::now()), std::thread([](&end, &ended) mutable {
+          std::forward<Args...>(args...) {
+            f(std::forward<Args...>(args...));
+            end = chrono_granularity::now();
+          }
+        }) {}
+
+  // overloading based on return type not allowed
+  chrono_duration derived_join() {
+    this->join();
+    return (end - begin);
+  };
+};
 
 /*
     Generates ranges (x, y) where x < y

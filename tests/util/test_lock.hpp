@@ -2,10 +2,26 @@
 #include "./util.hpp"
 #include <thread>
 
-template <typename... Args>
-void test_lock_n_times(std::size_t const n, Args &&...args) {
+/*
+  thread execution times of each run
+*/
+template <typename RangeEndGen, typename CriticalSection>
+std::vector<std::vector<util::MThread::chrono_duration>> test_lock_n_times(
+    std::size_t const n, std::size_t const len, std::size_t const numThreads,
+    std::size_t const numIncrementsPerThreads, RangeEndGen &&rangeEndGen,
+    CriticalSection &&criticalSection) {
+
+  std::vector<std::vector<util::MThread::chrono_duration>> execTimeLog.reserve(
+      n);
+
   for (std::size_t i = 0; i != n; i++) {
-    test_lock_once(std::forward<Args>(args)...);
+    
+    std::vector<util::MThread::chrono_duration> threadExecTimes =
+        test_lock_once(len, numThreads, numIncrementsPerThreads,
+                       std::forward<RangeEndGen>(rangeEndGen),
+                       std::forward<CriticalSection>(criticalSection));
+
+    execTimeLog.emplace_back(std::move(threadExecTimes));
   }
 }
 
@@ -17,13 +33,12 @@ void test_lock_n_times(std::size_t const n, Args &&...args) {
   NOTE : Critical Section should take care of obtaining the lock
           passed as first parameter
 */
-template <typename CriticalSection, typename RangeEndGen>
-void test_lock_once(std::size_t const len, std::size_t const numThreads,
-                    std::size_t const numIncrementsPerThreads,
-                    RangeEndGen &&rangeEndGen,
-                    CriticalSection &&criticalSection) {
-
-  std::vector<std::thread> threads;
+template <typename RangeEndGen, typename CriticalSection>
+util::MThread::chrono_duration
+test_lock_once(std::size_t const len, std::size_t const numThreads,
+               std::size_t const numIncrementsPerThreads,
+               RangeEndGen &&rangeEndGen, CriticalSection &&criticalSection) {
+  std::vector<MThread> threads;
   std::vector<std::size_t> v(len);
 
   util::IncrementsTy increments =
@@ -51,8 +66,11 @@ void test_lock_once(std::size_t const len, std::size_t const numThreads,
     });
   }
 
-  for (auto &t : threads)
-    t.join();
+  std::vector<util::Mthread::chrono_duration> threadExecTimes(numThreads);
+
+  for (std::size_t i = 0; auto &t : threads) {
+    threadExecTimes[i++] = t.derived_join();
+  }
 
   std::vector<std::size_t> finalVector = util::get_final_vector(
       std::vector<std::size_t> v(len), std::move(increments));
@@ -60,5 +78,5 @@ void test_lock_once(std::size_t const len, std::size_t const numThreads,
   if (!util::assertions::assert_eq(v, finalVector)) {
     exit(1);
   }
-  return;
+  return threadExecTimes;
 }

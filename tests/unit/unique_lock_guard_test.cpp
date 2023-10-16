@@ -13,5 +13,6 @@ int main() {
           modifier(v[i]);
       };
 
-  test_lock_n_times(1'000, 100, 10, 10, util::LE5000, criticalSection);
+  std::vector<std::vector<util::MThread::chrono_duration>> executionTimes =
+      test_lock_n_times(1'000, 100, 10, 10, util::LE5000, criticalSection);
 };

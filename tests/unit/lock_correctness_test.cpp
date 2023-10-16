@@ -1,8 +1,13 @@
 #include "../../includes/lock2.hpp"
 #include "../util/test_lock.hpp"
 
+static std::size_t NUM_THREADS;
+static std::size_t NUM_INCREMENTS_PER_THREAD;
+static std::size_t LEN;
+
 int main() {
   auto const modifier = [](std::size_t &i) { i++; };
+  
   auto const criticalSection =
       [modifier](ByteLock<> &bl, std::vector<std::size_t> &v,
                  std::size_t const begin, std::size_t const end) {
@@ -14,5 +19,7 @@ int main() {
         bl.unlock(lockId);
       };
 
-  test_lock_n_times(1'000, 100, 10, 10, util::LE5000, criticalSection);
+  std::vector<std::vector<util::MThread::chrono_duration>> executionTimes =
+      test_lock_n_times(1'000, 100, 10, 10, util::LE5000, criticalSection);
+  return 0;
 };
