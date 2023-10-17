@@ -1,4 +1,4 @@
-#include "../includes/lock2.hpp"
+#include <range_lock/lock2.hpp>
 
 template <class Lock, template <class> class Guard>
 std::size_t ByteLock<Lock, Guard>::lock(std::size_t begin, std::size_t end) {
@@ -7,7 +7,7 @@ std::size_t ByteLock<Lock, Guard>::lock(std::size_t begin, std::size_t end) {
   bool localFlag = 0;
   while (lockId == 0) {
     {
-      const Guard lock_guard(mtx);
+      const Guard<Lock> lock_guard(mtx);
       for (auto const &it : rangeMap) {
         std::size_t b = it.second.first;
         std::size_t e = it.second.second;
