@@ -40,12 +40,14 @@ public:
 
   template <typename F, typename... Args>
   MThread(F &&f, Args &&...args)
-      : begin(chrono_granularity::now()),
-        std::thread([&this, f = std::forward<F>(f)](
-                        std::forward<Args...>(args...)) mutable {
-          f(std::forward<Args...>(args...));
-          end = chrono_granularity::now();
-        }) {}
+      : begin(chrono_granularity::now()), std::thread(
+                                              [&end = end,
+                                               f = std::forward<F>(f)](
+                                                  Args &&...args) mutable {
+                                                f(std::forward<Args>(args)...);
+                                                end = chrono_granularity::now();
+                                              },
+                                              std::forward<Args>(args)...) {}
 
   // overloading based on return type not allowed
   chrono_duration derived_join() {
@@ -66,6 +68,8 @@ get_increment_ranges(std::size_t const numRanges,
                      RangeEndGen &&f = std::forward<RangeEndGen>(LE5000)) {
 
   IncrementsTy ranges;
+  ranges.reserve(numRanges);
+ 
   for (std::size_t i = 0; i != numRanges; i++) {
     std::size_t x, y;
 
@@ -75,8 +79,9 @@ get_increment_ranges(std::size_t const numRanges,
     std::size_t begin = std::min(x, y);
     std::size_t end = std::max(x, y);
 
-    ranges.emplace_back(std::make_pair(begin, end));
+    ranges[i] = std::make_pair(begin, end);
   }
+  
   return ranges;
 }
 

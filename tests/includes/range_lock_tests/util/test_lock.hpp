@@ -1,5 +1,7 @@
 #include "./util.hpp"
+#include <iterator>
 #include <range_lock/lock2.hpp>
+#include <range_lock_tests/util/assertions.hpp>
 #include <thread>
 
 /*
@@ -34,7 +36,7 @@ std::vector<std::vector<util::MThread::chrono_duration>> test_lock_n_times(
           passed as first parameter
 */
 template <typename RangeEndGen, typename CriticalSection>
-util::MThread::chrono_duration
+std::vector<util::MThread::chrono_duration>
 test_lock_once(std::size_t const len, std::size_t const numThreads,
                std::size_t const numIncrementsPerThreads,
                RangeEndGen &&rangeEndGen, CriticalSection &&criticalSection) {
@@ -49,9 +51,11 @@ test_lock_once(std::size_t const len, std::size_t const numThreads,
 
   for (std::size_t i = 0; i != numThreads; i++) {
 
-    auto incrBeginIter = increments.begin() + (i * numIncrementsPerThreads);
+    util::IncrementsTy::iterator incrBeginIter =
+        increments.begin() + (i * numIncrementsPerThreads);
 
-    auto incrEndIter = increments.begin() + ((i + 1) * numIncrementsPerThreads);
+    util::IncrementsTy::iterator incrEndIter =
+        increments.begin() + ((i + 1) * numIncrementsPerThreads);
 
     threads.emplace_back(
         [&bl, &v, &criticalSection, incrBeginIter, incrEndIter, i]() {
@@ -71,7 +75,7 @@ test_lock_once(std::size_t const len, std::size_t const numThreads,
   }
 
   std::vector<std::size_t> finalVector = util::get_final_vector(
-      std::vector<std::size_t> v(len), std::move(increments));
+      std::vector<std::size_t>(len), std::move(increments));
 
   if (!util::assertions::assert_eq(v, finalVector)) {
     exit(1);
