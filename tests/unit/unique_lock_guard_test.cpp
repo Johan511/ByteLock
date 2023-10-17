@@ -1,6 +1,6 @@
-#include "../../includes/lock2.hpp"
-#include "../../includes/range_guard.hpp"
-#include "../util/test_lock.hpp"
+#include <range_lock/lock2.hpp>
+#include <range_lock/range_guard.hpp>
+#include <util/test_lock.hpp>
 
 int main() {
   auto const modifier = [](std::size_t &i) { i++; };

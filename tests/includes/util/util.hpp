@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <atomic>
 #include <random>
+#include <thread>
 #include <vector>
 
 namespace util {
@@ -39,11 +40,11 @@ public:
 
   template <typename F, typename... Args>
   MThread(F &&f, Args &&...args)
-      : begin(chrono_granularity::now()), std::thread([](&end, &ended) mutable {
-          std::forward<Args...>(args...) {
-            f(std::forward<Args...>(args...));
-            end = chrono_granularity::now();
-          }
+      : begin(chrono_granularity::now()),
+        std::thread([&this, f = std::forward<F>(f)](
+                        std::forward<Args...>(args...)) mutable {
+          f(std::forward<Args...>(args...));
+          end = chrono_granularity::now();
         }) {}
 
   // overloading based on return type not allowed

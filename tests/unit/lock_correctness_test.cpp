@@ -1,5 +1,5 @@
-#include "../../includes/lock2.hpp"
-#include "../util/test_lock.hpp"
+#include <range_lock/lock2.hpp>
+#include <util/test_lock.hpp>
 
 static std::size_t NUM_THREADS;
 static std::size_t NUM_INCREMENTS_PER_THREAD;

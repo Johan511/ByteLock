@@ -1,3 +1,5 @@
+#pragma once
+
 #include <functional>
 
 template <typename RangeLock> class range_guard {

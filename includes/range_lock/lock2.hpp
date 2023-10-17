@@ -1,3 +1,5 @@
+#pragma once
+
 #include <atomic>
 #include <boost/container/flat_map.hpp>
 #include <map>

@@ -1,5 +1,5 @@
-#include "../../includes/lock2.hpp"
 #include "./util.hpp"
+#include <range_lock/lock2.hpp>
 #include <thread>
 
 /*
@@ -11,11 +11,11 @@ std::vector<std::vector<util::MThread::chrono_duration>> test_lock_n_times(
     std::size_t const numIncrementsPerThreads, RangeEndGen &&rangeEndGen,
     CriticalSection &&criticalSection) {
 
-  std::vector<std::vector<util::MThread::chrono_duration>> execTimeLog.reserve(
-      n);
+  std::vector<std::vector<util::MThread::chrono_duration>> execTimeLog;
+  execTimeLog.reserve(n);
 
   for (std::size_t i = 0; i != n; i++) {
-    
+
     std::vector<util::MThread::chrono_duration> threadExecTimes =
         test_lock_once(len, numThreads, numIncrementsPerThreads,
                        std::forward<RangeEndGen>(rangeEndGen),
@@ -38,7 +38,7 @@ util::MThread::chrono_duration
 test_lock_once(std::size_t const len, std::size_t const numThreads,
                std::size_t const numIncrementsPerThreads,
                RangeEndGen &&rangeEndGen, CriticalSection &&criticalSection) {
-  std::vector<MThread> threads;
+  std::vector<util::MThread> threads;
   std::vector<std::size_t> v(len);
 
   util::IncrementsTy increments =
@@ -49,24 +49,22 @@ test_lock_once(std::size_t const len, std::size_t const numThreads,
 
   for (std::size_t i = 0; i != numThreads; i++) {
 
-    util::IncrementsTy::iterator incrBeginIter =
-        increments.begin() + (i * numIncrementsPerThreads);
+    auto incrBeginIter = increments.begin() + (i * numIncrementsPerThreads);
 
-    util::IncrementsTy::iterator incrEndIter =
-        increments.begin() + increments.begin() +
-        ((i + 1) * numIncrementsPerThreads);
+    auto incrEndIter = increments.begin() + ((i + 1) * numIncrementsPerThreads);
 
-    threads.emplace_back([&bl, &v, &modifier, incrBeginIter, incrEndIter, i]() {
-      for (; incrBeginIter != incrEndIter; incrBeginIter++) {
-        std::size_t begin = p.first;
-        std::size_t end = p.second;
+    threads.emplace_back(
+        [&bl, &v, &criticalSection, incrBeginIter, incrEndIter, i]() {
+          for (; incrBeginIter != incrEndIter; incrBeginIter++) {
+            std::size_t begin = incrBeginIter->first;
+            std::size_t end = incrBeginIter->second;
 
-        criticalSection(bl, v, begin, end);
-      }
-    });
+            criticalSection(bl, v, begin, end);
+          }
+        });
   }
 
-  std::vector<util::Mthread::chrono_duration> threadExecTimes(numThreads);
+  std::vector<util::MThread::chrono_duration> threadExecTimes(numThreads);
 
   for (std::size_t i = 0; auto &t : threads) {
     threadExecTimes[i++] = t.derived_join();
