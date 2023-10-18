@@ -25,6 +25,8 @@ std::vector<std::vector<util::MThread::chrono_duration>> test_lock_n_times(
 
     execTimeLog.emplace_back(std::move(threadExecTimes));
   }
+  
+  return execTimeLog;
 }
 
 /*
@@ -58,10 +60,11 @@ test_lock_once(std::size_t const len, std::size_t const numThreads,
         increments.begin() + ((i + 1) * numIncrementsPerThreads);
 
     threads.emplace_back(
-        [&bl, &v, &criticalSection, incrBeginIter, incrEndIter, i]() mutable {
-          for (; incrBeginIter != incrEndIter; incrBeginIter++) {
-            std::size_t begin = incrBeginIter->first;
-            std::size_t end = incrBeginIter->second;
+        [&bl, &v, &criticalSection, incrBeginIter, incrEndIter, i]() {
+          util::IncrementsTy::iterator mutableIncBeginIter = incrBeginIter;
+          for (; mutableIncBeginIter != incrEndIter; mutableIncBeginIter++) {
+            std::size_t begin = mutableIncBeginIter->first;
+            std::size_t end = mutableIncBeginIter->second;
 
             criticalSection(bl, v, begin, end);
           }
