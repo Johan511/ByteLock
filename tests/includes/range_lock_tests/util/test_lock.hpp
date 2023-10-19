@@ -1,13 +1,13 @@
-#include "./util.hpp"
 #include <iterator>
 #include <range_lock/lock2.hpp>
 #include <range_lock_tests/util/assertions.hpp>
+#include <range_lock_tests/util/util.hpp>
 #include <thread>
 
 /*
   thread execution times of each run
 */
-template <typename RangeEndGen, typename CriticalSection>
+template <typename Lock, typename RangeEndGen, typename CriticalSection>
 std::vector<std::vector<util::MThread::chrono_duration>> test_lock_n_times(
     std::size_t const n, std::size_t const len, std::size_t const numThreads,
     std::size_t const numIncrementsPerThreads, RangeEndGen &&rangeEndGen,
@@ -19,9 +19,9 @@ std::vector<std::vector<util::MThread::chrono_duration>> test_lock_n_times(
   for (std::size_t i = 0; i != n; i++) {
 
     std::vector<util::MThread::chrono_duration> threadExecTimes =
-        test_lock_once(len, numThreads, numIncrementsPerThreads,
-                       std::forward<RangeEndGen>(rangeEndGen),
-                       std::forward<CriticalSection>(criticalSection));
+        test_lock_once<Lock>(len, numThreads, numIncrementsPerThreads,
+                             std::forward<RangeEndGen>(rangeEndGen),
+                             std::forward<CriticalSection>(criticalSection));
 
     execTimeLog.emplace_back(std::move(threadExecTimes));
   }
@@ -37,7 +37,7 @@ std::vector<std::vector<util::MThread::chrono_duration>> test_lock_n_times(
   NOTE : Critical Section should take care of obtaining the lock
           passed as first parameter
 */
-template <typename RangeEndGen, typename CriticalSection>
+template <typename Lock, typename RangeEndGen, typename CriticalSection>
 std::vector<util::MThread::chrono_duration>
 test_lock_once(std::size_t const len, std::size_t const numThreads,
                std::size_t const numIncrementsPerThreads,
@@ -49,7 +49,7 @@ test_lock_once(std::size_t const len, std::size_t const numThreads,
       util::get_increment_ranges(numIncrementsPerThreads * numThreads, len,
                                  std::forward<RangeEndGen>(rangeEndGen));
 
-  ByteLock<> bl;
+  Lock bl;
 
   for (std::size_t i = 0; i != numThreads; i++) {
 
