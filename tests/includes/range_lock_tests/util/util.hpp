@@ -32,27 +32,28 @@ class MThread final : public std::thread {
   using std::thread::join;
 
 public:
-  using chrono_granularity = std::chrono::steady_clock;
+  using chrono_granularity = std::chrono::high_resolution_clock;
   using chrono_duration = std::chrono::duration<double>;
-
-  chrono_granularity::time_point begin;
-  chrono_granularity::time_point end;
 
   template <typename F, typename... Args>
   MThread(F &&f, Args &&...args)
-      : begin(chrono_granularity::now()), std::thread(
-                                              [&end = end,
-                                               f = std::forward<F>(f)](
-                                                  Args &&...args) mutable {
-                                                f(std::forward<Args>(args)...);
-                                                end = chrono_granularity::now();
-                                              },
-                                              std::forward<Args>(args)...) {}
+      : std::thread(
+            [f = std::forward<F>(f)](Args &&...args) mutable {
+              auto const begin = chrono_granularity::now();
+              f(std::forward<Args>(args)...);
+              auto const end = chrono_granularity::now();
+              std::cout
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(
+                         end - begin)
+                         .count()
+                  << std::endl;
+            },
+            std::forward<Args>(args)...) {}
 
   // overloading based on return type not allowed
   chrono_duration derived_join() {
     this->join();
-    return (end - begin);
+    return chrono_granularity::now().time_since_epoch();
   };
 };
 
@@ -68,8 +69,8 @@ get_increment_ranges(std::size_t const numRanges,
                      RangeEndGen &&f = std::forward<RangeEndGen>(LE5000)) {
 
   IncrementsTy ranges;
-  ranges.reserve(numRanges);
- 
+  ranges.resize(numRanges);
+
   for (std::size_t i = 0; i != numRanges; i++) {
     std::size_t x, y;
 
@@ -81,7 +82,7 @@ get_increment_ranges(std::size_t const numRanges,
 
     ranges[i] = std::make_pair(begin, end);
   }
-  
+
   return ranges;
 }
 

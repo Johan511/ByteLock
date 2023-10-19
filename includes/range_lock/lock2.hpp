@@ -39,7 +39,7 @@ std::size_t ByteLock<Lock, Guard>::lock(std::size_t begin, std::size_t end) {
         std::size_t b = it.second.first;
         std::size_t e = it.second.second;
 
-        if (!(e < begin) && !(end < b)) {
+        if (!(e < begin) & !(end < b)) {
           waiting[it.first].push_back(flag);
           localFlag = true;
           break;
@@ -47,13 +47,11 @@ std::size_t ByteLock<Lock, Guard>::lock(std::size_t begin, std::size_t end) {
       }
       if (localFlag == false) {
         rangeMap[++counter] = {begin, end};
-        lockId = counter;
+        return counter;
       }
     }
-    if (localFlag != false) {
-      flag.wait(0);
-      localFlag = false;
-    }
+    flag.wait(0);
+    localFlag = false;
   }
   return lockId;
 }
@@ -75,7 +73,8 @@ void ByteLock<Lock, Guard>::unlock(std::size_t lockId) {
 }
 
 template <class Lock, template <class> class Guard>
-std::size_t ByteLock<Lock, Guard>::try_lock(std::size_t begin, std::size_t end) {
+std::size_t ByteLock<Lock, Guard>::try_lock(std::size_t begin,
+                                            std::size_t end) {
   const Guard lock_guard(mtx);
   for (auto const &it : rangeMap) {
     std::size_t b = it.second.first;
@@ -88,4 +87,3 @@ std::size_t ByteLock<Lock, Guard>::try_lock(std::size_t begin, std::size_t end) 
   rangeMap[++counter] = {begin, end};
   return counter;
 }
-

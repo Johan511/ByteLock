@@ -25,7 +25,7 @@ std::vector<std::vector<util::MThread::chrono_duration>> test_lock_n_times(
 
     execTimeLog.emplace_back(std::move(threadExecTimes));
   }
-  
+
   return execTimeLog;
 }
 
@@ -77,10 +77,10 @@ test_lock_once(std::size_t const len, std::size_t const numThreads,
     threadExecTimes[i++] = t.derived_join();
   }
 
-  std::vector<std::size_t> finalVector = util::get_final_vector(
+  std::vector<std::size_t> expectedVector = util::get_final_vector(
       std::vector<std::size_t>(len), std::move(increments));
 
-  if (!util::assertions::assert_eq(v, finalVector)) {
+  if (!util::assertions::assert_eq(expectedVector, v)) {
     exit(1);
   }
   return threadExecTimes;
