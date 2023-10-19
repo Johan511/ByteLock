@@ -1,5 +1,5 @@
 #include <range_lock/lock2.hpp>
-#include <range_lock/range_guard.hpp>
+#include <range_lock/range_unique_lock.hpp>
 #include <util/test_lock.hpp>
 
 int main() {
