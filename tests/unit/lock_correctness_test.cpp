@@ -16,16 +16,17 @@ int main() {
                  std::size_t const begin, std::size_t const end) {
         std::size_t lockId = bl.lock(begin, end);
 
-        for (std::size_t i = begin; i != end; i++)
+        for (std::size_t i = begin; i != end; i++) {
           modifier(v[i]);
+        }
 
         bl.unlock(lockId);
       };
-  for (; NUM_THREADS <= NUM_CORES; NUM_THREADS += 2)
-    std::vector<std::vector<util::MThread::chrono_duration>> executionTimes =
-        test_lock_n_times<ByteLock<>>(NUM_ITERATIONS, LEN, NUM_THREADS,
-                                      NUM_INCREMENTS_PER_THREAD, util::LE5000,
-                                      criticalSection);
+  // for (; NUM_THREADS <= NUM_CORES; NUM_THREADS += 2)
+  std::vector<std::vector<util::MThread::chrono_duration>> executionTimes =
+      test_lock_n_times<ByteLock<>>(NUM_ITERATIONS, LEN, NUM_THREADS,
+                                    NUM_INCREMENTS_PER_THREAD, util::LE5000,
+                                    criticalSection);
 
   return 0;
 };

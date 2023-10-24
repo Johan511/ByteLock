@@ -18,8 +18,7 @@ class ByteLock {
   Lock mtx;
   std::size_t counter = 0;
   MapTy<std::size_t, std::pair<std::size_t, std::size_t>> rangeMap;
-  MapTy<std::size_t, std::vector<std::reference_wrapper<std::atomic_flag>>>
-      waiting;
+  MapTy<std::size_t, std::shared_ptr<std::atomic_flag>> waiting;
 
 public:
   std::size_t lock(std::size_t begin, std::size_t end);
@@ -30,8 +29,11 @@ public:
 template <class Lock, template <class> class Guard>
 std::size_t ByteLock<Lock, Guard>::lock(std::size_t begin, std::size_t end) {
   std::size_t lockId = 0;
-  std::atomic_flag flag(true);
-  bool localFlag = 0;
+  bool localFlag = false;
+  std::size_t blockIdx;
+
+  std::shared_ptr<std::atomic_flag> waitingFlag;
+
   while (lockId == 0) {
     {
       const Guard<Lock> lock_guard(mtx);
@@ -40,18 +42,22 @@ std::size_t ByteLock<Lock, Guard>::lock(std::size_t begin, std::size_t end) {
         std::size_t e = it.second.second;
 
         if (!(e < begin) & !(end < b)) {
-          waiting[it.first].push_back(flag);
+          blockIdx = it.first;
           localFlag = true;
+          waitingFlag = waiting[blockIdx];
           break;
         }
       }
       if (localFlag == false) {
-        rangeMap[++counter] = {begin, end};
+        ++counter;
+        rangeMap[counter] = {begin, end};
+        waiting[counter] =
+            std::shared_ptr<std::atomic_flag>(new std::atomic_flag(false));
         return counter;
       }
+      localFlag = false;
     }
-    flag.wait(0);
-    localFlag = false;
+    waitingFlag->wait(false);
   }
   return lockId;
 }
@@ -62,14 +68,11 @@ void ByteLock<Lock, Guard>::unlock(std::size_t lockId) {
 
   rangeMap.erase(lockId);
 
-  std::vector<std::reference_wrapper<std::atomic_flag>> waitingFlags =
-      std::move(waiting[lockId]);
-  waiting.erase(lockId);
+  waiting[lockId]->test_and_set();
+  waiting[lockId]->notify_all();
 
-  for (std::atomic_flag &f : waitingFlags) {
-    f.test_and_set();
-    f.notify_all();
-  }
+  waiting.erase(lockId);
+  return;
 }
 
 template <class Lock, template <class> class Guard>
