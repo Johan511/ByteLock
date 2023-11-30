@@ -1,13 +1,13 @@
-#include <range_lock/lock2.hpp>
+#include <range_lock/range_mutex.hpp>
 #include <range_lock/range_unique_lock.hpp>
 #include <util/test_lock.hpp>
 
 int main() {
   auto const modifier = [](std::size_t &i) { i++; };
   auto const criticalSection =
-      [modifier](ByteLock<> &bl, std::vector<std::size_t> &v,
+      [modifier](RangeMutex<> &bl, std::vector<std::size_t> &v,
                  std::size_t const begin, std::size_t const end) {
-        range_unique_lock<ByteLock<>> rul(bl, begin, end);
+        range_unique_lock<RangeMutex<>> rul(bl, begin, end);
 
         for (std::size_t i = begin; i != end; i++)
           modifier(v[i]);

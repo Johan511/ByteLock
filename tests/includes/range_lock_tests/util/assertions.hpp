@@ -6,8 +6,8 @@
 namespace util::assertions {
 
 bool assert_eq(std::vector<std::size_t> const &expected,
-                     std::vector<std::size_t> const &actual,
-                     std::string logFileName = "log.txt") {
+               std::vector<std::size_t> const &actual,
+               std::string logFileName = "log.txt") {
   if (expected == actual)
     return true;
 

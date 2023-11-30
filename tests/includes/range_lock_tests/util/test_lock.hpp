@@ -1,5 +1,5 @@
 #include <iterator>
-#include <range_lock/lock2.hpp>
+#include <range_lock/range_mutex.hpp>
 #include <range_lock_tests/util/assertions.hpp>
 #include <range_lock_tests/util/util.hpp>
 #include <thread>

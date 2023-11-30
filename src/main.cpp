@@ -56,7 +56,7 @@ std::vector<std::size_t> get_final_vector(
 }
 
 void whole_lock(std::vector<std::pair<std::size_t, std::size_t>> &&increments) {
-  // ByteLock<SpinLockGuard, SpinLock> bl;
+  // RangeMutex<SpinLockGuard, SpinLock> bl;
   std::mutex mtx;
 
   std::vector<std::thread> threads;
@@ -107,8 +107,8 @@ void whole_lock(std::vector<std::pair<std::size_t, std::size_t>> &&increments) {
 }
 
 void run(std::vector<std::pair<std::size_t, std::size_t>> &&increments) {
-  // ByteLock<SpinLockGuard, SpinLock> bl;
-  ByteLock<std::mutex, std::lock_guard> bl;
+  // RangeMutex<SpinLockGuard, SpinLock> bl;
+  RangeMutex<std::mutex, std::lock_guard> bl;
 
   std::vector<std::thread> threads;
   std::vector<std::size_t> v(len);
