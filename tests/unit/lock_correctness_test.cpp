@@ -1,6 +1,5 @@
 #include <iostream>
 #include <range_lock/range_mutex.hpp>
-#include <range_lock/util/atomic_flag.hpp>
 #include <range_lock_tests/util/test_lock.hpp>
 
 static std::size_t NUM_CORES = 40;
